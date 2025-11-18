@@ -5,7 +5,8 @@ from inline_markdown import (
     extract_markdown_images, 
     extract_markdown_links,
     split_nodes_image,
-    split_nodes_link
+    split_nodes_link,
+    text_to_textnodes
 )
 
 
@@ -128,10 +129,17 @@ class TestInlineMarkdown(unittest.TestCase):
         ]
         self.assertListEqual(split_nodes_image([node]), expected)
 
-    def test_split_images_no_dangling_nodes(self):
+    def test_split_images_first_node(self):
         node = TextNode("![first image](https://example.com/image1.png), some text between them ", TextType.TEXT)
         expected = [
             TextNode('first image', TextType.IMAGE, 'https://example.com/image1.png'),
+            TextNode(', some text between them ', TextType.TEXT),
+        ]
+        self.assertListEqual(split_nodes_image([node]), expected)
+
+    def test_no_image(self):
+        node = TextNode(", some text between them ", TextType.TEXT)
+        expected = [
             TextNode(', some text between them ', TextType.TEXT),
         ]
         self.assertListEqual(split_nodes_image([node]), expected)
@@ -148,6 +156,22 @@ class TestInlineMarkdown(unittest.TestCase):
             TextNode(' and final few words', TextType.TEXT)
         ]
         self.assertListEqual(split_nodes_link([node]), expected)
+
+    def test_text_to_textnode(self):
+        text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("text", TextType.BOLD),
+            TextNode(" with an ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" word and a ", TextType.TEXT),
+            TextNode("code block", TextType.CODE),
+            TextNode(" and an ", TextType.TEXT),
+            TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+            TextNode(" and a ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "https://boot.dev"),
+        ]
+        self.assertListEqual(text_to_textnodes(text), expected)
 
 if __name__ == "__main__":
     unittest.main()
