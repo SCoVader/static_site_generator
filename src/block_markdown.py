@@ -7,8 +7,8 @@ class BlockType(Enum):
     HEADING = "heading"
     CODE = "code"
     QUOTE = "quote"
-    UNORDERED_LIST = "unordered list"
-    ORDERED_LIST = "ordered list"
+    ULIST = "unordered list"
+    OLIST = "ordered list"
 
 
 def markdown_to_blocks(markdown):
@@ -26,15 +26,27 @@ def block_to_block_type(block):
         while block[n] == '#':
             n += 1
         if n <= 6 and block[n] == ' ': 
-            block_type = BlockType.HEADING
+            return BlockType.HEADING
     if block[0: 3] == "```" and block[-1: -4: -1] == "```":
-        block_type = BlockType.CODE
+        return BlockType.CODE
         
-    # UNFINISHED
-    if block[0] == '>':
-        block_type = BlockType.QUOTE
-    if block[0:2] == '- ':
-        block_type = BlockType.UNORDERED_LIST
-    if block[0:3] =='1. ':
-        block_type = BlockType.ORDERED_LIST
+    lines = block.split("\n")
+
+    if lines[0].startswith(">"):
+        for line in lines:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
+    if lines[0].startswith("- "):
+        for line in lines:
+            if not line.startswith("- "):
+                return BlockType.PARAGRAPH
+        return BlockType.ULIST
+    if lines[0].startswith("1. "):
+        n = 1
+        for line in lines:
+            if not line.startswith(f"{n}. "):
+                return BlockType.PARAGRAPH
+            n += 1
+        return BlockType.OLIST
     return block_type
