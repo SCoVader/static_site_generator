@@ -1,12 +1,13 @@
 import os
 import shutil
+from block_markdown import (markdown_to_html_node)
+
 
 def copy_tree(source, dest):
     if not os.path.exists(dest):
         os.mkdir(dest)
-
+    
     items = os.listdir(source) #['folder1', 'folder2', 'file1', 'file2']
-
     for item in items:
         print(f"{item}")
         item_path = f"{source}/{item}"
@@ -17,20 +18,49 @@ def copy_tree(source, dest):
             print(f"{item} is dir")
             copy_tree(item_path, f"{dest}/{item}")
 
+def extract_title(markdown):
+    lines = markdown.split("\n")
+    for line in lines:
+        if line.startswith("# "):
+            return line.strip("# ")
+    raise Exception("No title found")
+
+def cleanup_n_copy_content(src='./static/', dst = './public/'):
+    if not os.path.exists(src):
+        raise Exception("Source path not found")
+
+    if not os.path.exists(dst):
+        os.mkdir(dst)
+
+    if os.listdir(dst) != []:
+        shutil.rmtree(dst)
+
+    copy_tree(src, dst)
+    os.listdir(dst)
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    with open(from_path) as markdown_file:
+        markdown = markdown_file.read()
+    with open(template_path) as template_file:
+        template = template_file.read()
+
+    node = markdown_to_html_node(markdown)
+    html = node.to_html()
+    title = extract_title(markdown)
+    titled = template.replace(r"{{ Title }}", title)
+    full = titled.replace(r"{{ Content }}", html)
+
+    with open(dest_path, 'x') as output:
+        output.write(full)
 
 def main():
-    source, dest = "./static/", "./public/"
-    if not os.path.exists(source):
-        raise Exception("Source path not found")
+    source = "./content/index.md"
+    destination = "./public/index.html"
+    template = "./template.html"
+    cleanup_n_copy_content()
+    generate_page(source, template, destination)
     
-    if os.listdir(dest) != []:
-            shutil.rmtree(dest)
-
-    copy_tree(source, dest)
-    os.listdir(dest)
-
-    
-
 
 if __name__ == "__main__":
     main()
